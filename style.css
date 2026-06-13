@@ -12,7 +12,6 @@ body {
     position: relative;
 }
 
-/* 배경 패턴 */
 body::before {
     content: '';
     position: fixed;
@@ -131,25 +130,57 @@ h1 {
     object-fit: cover;
 }
 
-.remove-photo-btn {
+/* 영상 업로드 스타일 */
+.video-upload {
+    margin-bottom: 15px;
+}
+
+.upload-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    margin-top: 5px;
+}
+
+.video-preview {
     width: 100%;
-    padding: 8px;
-    margin-top: 8px;
-    background: #ff6b6b;
-    color: white;
-    border: none;
-    border-radius: 10px;
+    height: 180px;
+    background: #f0f0f0;
+    border-radius: 15px;
+    border: 2px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    font-size: 13px;
-    transition: all 0.2s ease;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-.remove-photo-btn:hover {
-    background: #ee5a52;
-    transform: scale(1.01);
+.video-preview:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
 }
 
-/* 아이템 카드 (사진 포함) */
+.video-placeholder {
+    text-align: center;
+    color: #999;
+    font-size: 48px;
+}
+
+.video-placeholder span {
+    display: block;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.video-preview video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 아이템 카드 */
 .item-card {
     background: white;
     padding: 15px;
@@ -184,6 +215,42 @@ h1 {
 
 .item-photo img:hover {
     transform: scale(1.05);
+}
+
+.item-video {
+    width: 100%;
+    height: 200px;
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    cursor: pointer;
+    background: #000;
+    position: relative;
+}
+
+.item-video video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.item-video::after {
+    content: "▶";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: white;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.item-video:hover::after {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
 }
 
 .no-photo {
@@ -294,7 +361,7 @@ input[type="tel"] {
     letter-spacing: 1px;
 }
 
-/* 모달 (사진 확대) */
+/* 모달 */
 .modal {
     display: none;
     position: fixed;
@@ -307,16 +374,22 @@ input[type="tel"] {
     cursor: pointer;
 }
 
-.modal-content {
-    margin: auto;
-    display: block;
+.modal-content-img, .modal-content-video {
     max-width: 90%;
     max-height: 90%;
+    margin: auto;
+    display: block;
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     border-radius: 10px;
+}
+
+.modal-content-video {
+    width: auto;
+    max-width: 90%;
+    max-height: 90%;
 }
 
 .close-modal {
@@ -331,4 +404,14 @@ input[type="tel"] {
 
 .close-modal:hover {
     color: #bbb;
+}
+
+/* 반응형 */
+@media (max-width: 500px) {
+    .item-video, .item-photo {
+        height: 180px;
+    }
+    .video-preview, .photo-preview {
+        height: 160px;
+    }
 }
