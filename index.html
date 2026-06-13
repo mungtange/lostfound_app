@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>분실물 찾기</title>
+    
+    <!-- PWA 관련 코드들 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="LostFound">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- 아이폰 홈화면 아이콘 -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- 나머지는 기존 코드 -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 기존 내용 그대로 -->
+    
+    <script src="app.js"></script>
+    
+    <!-- PWA 등록 스크립트 -->
+    <script>
+        // Service Worker 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('Service Worker 등록 성공:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker 등록 실패:', error);
+                    });
+            });
+        }
+        
+        // 설치 가능한지 확인 (선택사항)
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // 설치 버튼을 보여주고 싶으면 여기에 코드 추가
+            console.log('앱 설치 가능!');
+        });
+    </script>
+    
+
+    <div class="app">
+        <h1>🔍 분실물 찾기</h1>
+    
+    
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="showTab('lost', event)">📱 분실물</button>
+            <button class="tab-btn" onclick="showTab('found', event)">🎁 습득물</button>
+            <button class="tab-btn" onclick="showTab('add', event)">➕ 등록</button>
+        </div>
+
+        <div id="lostTab" class="tab-content active">
+            <div id="lostList" class="item-list"></div>
+        </div>
+
+        <div id="foundTab" class="tab-content">
+            <div id="foundList" class="item-list"></div>
+        </div>
+
+        <div id="addTab" class="tab-content">
+            <div class="form">
+                <select id="itemType">
+                    <option value="lost">❌ 분실했어요</option>
+                    <option value="found">✅ 찾았어요</option>
+                </select>
+                <input type="text" id="title" placeholder="물건 이름 (예: 지갑, 핸드폰)">
+                <textarea id="desc" placeholder="상세 설명 (색상, 브랜드, 특징 등)"></textarea>
+                <input type="text" id="location" placeholder="📍 잃어버린/찾은 장소">
+                <input type="tel" id="phone" placeholder="📞 연락처 (010-1234-5678)" maxlength="13">
+                
+                <!-- 사진 추가 부분 -->
+                <div class="photo-upload">
+                    <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
+                        <div class="photo-placeholder">
+                            📸
+                            <span>사진 추가하기</span>
+                        </div>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+                    <button type="button" class="remove-photo-btn" id="removePhotoBtn" onclick="removePhoto()" style="display: none;">❌ 사진 제거</button>
+                </div>
+                
+                <button onclick="addItem()">✨ 등록하기 ✨</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사진 확대 모달 -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
