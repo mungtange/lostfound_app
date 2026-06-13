@@ -88,12 +88,19 @@ h1 {
     }
 }
 
-/* 사진 업로드 스타일 */
-.photo-upload {
+.upload-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 8px;
+    margin-top: 5px;
+}
+
+.photo-upload, .video-upload {
     margin-bottom: 15px;
 }
 
-.photo-preview {
+.photo-preview, .video-preview {
     width: 100%;
     height: 200px;
     background: #f0f0f0;
@@ -107,80 +114,33 @@ h1 {
     transition: all 0.3s ease;
 }
 
-.photo-preview:hover {
-    border-color: #667eea;
-    background: #f8f9ff;
-}
-
-.photo-placeholder {
-    text-align: center;
-    color: #999;
-    font-size: 48px;
-}
-
-.photo-placeholder span {
-    display: block;
-    font-size: 14px;
-    margin-top: 10px;
-}
-
-.photo-preview img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* 영상 업로드 스타일 */
-.video-upload {
-    margin-bottom: 15px;
-}
-
-.upload-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #555;
-    margin-bottom: 8px;
-    margin-top: 5px;
-}
-
 .video-preview {
-    width: 100%;
     height: 180px;
-    background: #f0f0f0;
-    border-radius: 15px;
-    border: 2px dashed #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    overflow: hidden;
-    transition: all 0.3s ease;
 }
 
-.video-preview:hover {
+.photo-preview:hover, .video-preview:hover {
     border-color: #667eea;
     background: #f8f9ff;
 }
 
-.video-placeholder {
+.photo-placeholder, .video-placeholder {
     text-align: center;
     color: #999;
     font-size: 48px;
 }
 
-.video-placeholder span {
+.photo-placeholder span, .video-placeholder span {
     display: block;
     font-size: 14px;
     margin-top: 10px;
 }
 
-.video-preview video {
+.photo-preview img, .video-preview video {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }
 
-/* 아이템 카드 */
 .item-card {
     background: white;
     padding: 15px;
@@ -361,7 +321,6 @@ input[type="tel"] {
     letter-spacing: 1px;
 }
 
-/* 모달 */
 .modal {
     display: none;
     position: fixed;
@@ -406,12 +365,23 @@ input[type="tel"] {
     color: #bbb;
 }
 
-/* 반응형 */
 @media (max-width: 500px) {
-    .item-video, .item-photo {
+    .app {
+        padding: 15px;
+        border-radius: 20px;
+    }
+    .tab-btn {
+        padding: 10px;
+        font-size: 14px;
+    }
+    .item-photo, .item-video {
         height: 180px;
     }
-    .video-preview, .photo-preview {
+    .video-preview {
         height: 160px;
+    }
+    .form input, .form select, .form textarea {
+        font-size: 16px;
+        padding: 14px;
     }
 }
