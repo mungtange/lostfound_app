@@ -2,32 +2,136 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>분실물 찾기</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="LostFound">
-    <meta name="theme-color" content="#667eea">
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>분실물 찾기 - 공유 버전</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .app {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #667eea; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
+        .tab-btn {
+            flex: 1; padding: 12px; border: none; background: #f0f0f0;
+            border-radius: 15px; cursor: pointer; font-weight: 600;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .item-card {
+            background: white; padding: 15px; border-radius: 20px;
+            margin-bottom: 15px; border-left: 5px solid #667eea;
+        }
+        .item-photo {
+            width: 100%; height: 200px; border-radius: 15px;
+            overflow: hidden; margin-bottom: 12px; cursor: pointer;
+            background: #f0f0f0;
+        }
+        .item-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .item-video {
+            width: 100%; height: 200px; border-radius: 15px;
+            overflow: hidden; margin-bottom: 12px; cursor: pointer;
+            background: #000; position: relative;
+        }
+        .item-video video { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .item-video::after {
+            content: "▶"; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); font-size: 48px;
+            color: white; text-shadow: 0 0 10px black; opacity: 0.8;
+        }
+        .item-card h3 { margin-bottom: 8px; color: #333; }
+        .item-card p { color: #666; margin: 5px 0; font-size: 14px; }
+        .contact {
+            color: #667eea; font-weight: bold; margin-top: 10px;
+            background: #f8f9ff; padding: 8px; border-radius: 10px;
+        }
+        .delete-btn {
+            background: #ff6b6b; color: white; border: none;
+            padding: 8px 15px; border-radius: 12px; cursor: pointer;
+            margin-top: 10px;
+        }
+        .form {
+            background: #f8f9fa; padding: 20px; border-radius: 20px;
+        }
+        .form input, .form select, .form textarea {
+            width: 100%; padding: 12px; margin-bottom: 12px;
+            border: 2px solid #e0e0e0; border-radius: 12px;
+        }
+        .form button {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 12px;
+            font-weight: 600; cursor: pointer;
+        }
+        .upload-label {
+            font-size: 14px; font-weight: 600; color: #555;
+            margin-bottom: 8px; margin-top: 5px;
+        }
+        .photo-preview, .video-preview {
+            width: 100%; height: 150px; background: #f0f0f0;
+            border-radius: 15px; border: 2px dashed #ccc;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; margin-bottom: 10px;
+        }
+        .empty-message { text-align: center; padding: 40px; color: #999; }
+        input[type="tel"] { font-family: monospace; font-size: 18px; }
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); cursor: pointer;
+        }
+        .modal-content-img, .modal-content-video {
+            max-width: 90%; max-height: 90%; margin: auto; display: block;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 10px;
+        }
+        .close-modal {
+            position: absolute; top: 20px; right: 35px;
+            color: white; font-size: 40px; cursor: pointer;
+        }
+        .loading { text-align: center; padding: 20px; color: #888; }
+    </style>
 </head>
 <body>
     <div class="app">
         <h1>🔍 분실물 찾기</h1>
         
         <div class="tabs">
-            <button class="tab-btn active" onclick="showTab('lost', event)">📱 분실물</button>
-            <button class="tab-btn" onclick="showTab('found', event)">🎁 습득물</button>
-            <button class="tab-btn" onclick="showTab('add', event)">➕ 등록</button>
+            <button class="tab-btn active" onclick="showTab('lost')">📱 분실물</button>
+            <button class="tab-btn" onclick="showTab('found')">🎁 습득물</button>
+            <button class="tab-btn" onclick="showTab('add')">➕ 등록</button>
         </div>
 
         <div id="lostTab" class="tab-content active">
-            <div id="lostList" class="item-list"></div>
+            <div id="lostList" class="item-list">
+                <div class="loading">⏳ 불러오는 중...</div>
+            </div>
         </div>
 
         <div id="foundTab" class="tab-content">
-            <div id="foundList" class="item-list"></div>
+            <div id="foundList" class="item-list">
+                <div class="loading">⏳ 불러오는 중...</div>
+            </div>
         </div>
 
         <div id="addTab" class="tab-content">
@@ -36,60 +140,261 @@
                     <option value="lost">❌ 분실했어요</option>
                     <option value="found">✅ 찾았어요</option>
                 </select>
-                <input type="text" id="title" placeholder="물건 이름 (예: 지갑, 핸드폰)">
-                <textarea id="desc" placeholder="상세 설명 (색상, 브랜드, 특징 등)"></textarea>
-                <input type="text" id="location" placeholder="📍 잃어버린/찾은 장소">
-                <input type="tel" id="phone" placeholder="📞 연락처 (010-1234-5678)" maxlength="13">
+                <input type="text" id="title" placeholder="물건 이름">
+                <textarea id="desc" placeholder="상세 설명"></textarea>
+                <input type="text" id="location" placeholder="📍 위치">
+                <input type="tel" id="phone" placeholder="📞 연락처 (010-1234-5678)">
                 
                 <!-- 사진 업로드 -->
-                <div class="photo-upload">
-                    <div class="upload-label">📸 사진 (선택)</div>
-                    <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
-                        <div class="photo-placeholder">
-                            📸
-                            <span>사진 추가하기</span>
-                        </div>
-                    </div>
-                    <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+                <div class="upload-label">📸 사진 (선택)</div>
+                <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
+                    📸 사진 추가하기
                 </div>
+                <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
                 
-                <!-- 영상 업로드 (새로 추가!) -->
-                <div class="video-upload">
-                    <div class="upload-label">🎥 영상 (선택, 30초 이내 추천)</div>
-                    <div class="video-preview" id="videoPreview" onclick="document.getElementById('videoInput').click()">
-                        <div class="video-placeholder">
-                            🎥
-                            <span>영상 추가하기</span>
-                        </div>
-                    </div>
-                    <input type="file" id="videoInput" accept="video/*" style="display: none;" onchange="previewVideo(this)">
+                <!-- 영상 업로드 -->
+                <div class="upload-label">🎥 영상 (선택, 50MB 제한)</div>
+                <div class="video-preview" id="videoPreview" onclick="document.getElementById('videoInput').click()">
+                    🎥 영상 추가하기
                 </div>
+                <input type="file" id="videoInput" accept="video/*" style="display:none" onchange="previewVideo(this)">
                 
                 <button onclick="addItem()">✨ 등록하기 ✨</button>
             </div>
         </div>
     </div>
 
-    <!-- 미디어 확대 모달 -->
     <div id="mediaModal" class="modal" onclick="closeModal()">
         <span class="close-modal">&times;</span>
         <div id="modalContent"></div>
     </div>
 
-    <script src="app.js"></script>
     <script>
-        // Service Worker 등록
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(registration => {
-                        console.log('Service Worker 등록 성공:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Service Worker 등록 실패:', error);
-                    });
+        // ============ Firebase 설정 ============
+        const firebaseConfig = {
+            apiKey: "AIzaSyDcaXysUHS5MiqPLFEmdqjhWD7h8tPCUKQ",
+            authDomain: "korean-e4be8.firebaseapp.com",
+            projectId: "korean-e4be8",
+            storageBucket: "korean-e4be8.firebasestorage.app",
+            messagingSenderId: "14177850866",
+            appId: "1:14177850866:web:6f83f59f281ecf5cf2c76b",
+            measurementId: "G-ZC7S0VK81X"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const storage = firebase.storage();
+        
+        let currentPhotoFile = null;
+        let currentVideoFile = null;
+        
+        // 전화번호 포맷팅
+        function formatPhoneNumber(value) {
+            let numbers = value.replace(/[^\d]/g, '');
+            if (numbers.length > 11) numbers = numbers.slice(0, 11);
+            if (numbers.length <= 3) return numbers;
+            if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+            return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+        }
+        
+        // 사진 미리보기
+        function previewPhoto(input) {
+            if (input.files && input.files[0]) {
+                currentPhotoFile = input.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').innerHTML = `<img src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;">`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // 영상 미리보기
+        function previewVideo(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                if (file.size > 50 * 1024 * 1024) {
+                    alert('⚠️ 영상 용량이 50MB를 초과합니다.');
+                    input.value = '';
+                    return;
+                }
+                currentVideoFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('videoPreview').innerHTML = `<video src="${e.target.result}" style="width:100%; height:100%; object-fit:cover;"></video>`;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        
+        // 데이터 불러오기
+        function loadItems() {
+            db.collection('items').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
+                const items = [];
+                snapshot.forEach(doc => {
+                    items.push({ id: doc.id, ...doc.data() });
+                });
+                displayItems(items);
             });
         }
+        
+        function showMediaModal(url, type) {
+            const modal = document.getElementById('mediaModal');
+            const modalContent = document.getElementById('modalContent');
+            if (type === 'image') {
+                modalContent.innerHTML = `<img class="modal-content-img" src="${url}">`;
+            } else {
+                modalContent.innerHTML = `<video class="modal-content-video" src="${url}" controls autoplay></video>`;
+            }
+            modal.style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('mediaModal').style.display = 'none';
+            document.getElementById('modalContent').innerHTML = '';
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        function displayItems(items) {
+            const lostItems = items.filter(i => i.type === 'lost');
+            const foundItems = items.filter(i => i.type === 'found');
+            
+            const lostList = document.getElementById('lostList');
+            if (lostItems.length === 0) {
+                lostList.innerHTML = '<div class="empty-message">📭 등록된 분실물이 없습니다</div>';
+            } else {
+                lostList.innerHTML = lostItems.map(item => `
+                    <div class="item-card">
+                        ${item.photoUrl ? `<div class="item-photo" onclick="showMediaModal('${item.photoUrl}', 'image')"><img src="${item.photoUrl}"></div>` : ''}
+                        ${item.videoUrl ? `<div class="item-video" onclick="showMediaModal('${item.videoUrl}', 'video')"><video src="${item.videoUrl}" muted></video></div>` : ''}
+                        <h3>❌ ${escapeHtml(item.title)}</h3>
+                        <p>📝 ${escapeHtml(item.desc)}</p>
+                        <p>📍 ${escapeHtml(item.location)}</p>
+                        <p class="contact">📞 ${escapeHtml(item.phone)}</p>
+                        <button class="delete-btn" onclick="deleteItem('${item.id}')">🗑️ 삭제</button>
+                    </div>
+                `).join('');
+            }
+            
+            const foundList = document.getElementById('foundList');
+            if (foundItems.length === 0) {
+                foundList.innerHTML = '<div class="empty-message">📭 등록된 습득물이 없습니다</div>';
+            } else {
+                foundList.innerHTML = foundItems.map(item => `
+                    <div class="item-card">
+                        ${item.photoUrl ? `<div class="item-photo" onclick="showMediaModal('${item.photoUrl}', 'image')"><img src="${item.photoUrl}"></div>` : ''}
+                        ${item.videoUrl ? `<div class="item-video" onclick="showMediaModal('${item.videoUrl}', 'video')"><video src="${item.videoUrl}" muted></video></div>` : ''}
+                        <h3>✅ ${escapeHtml(item.title)}</h3>
+                        <p>📝 ${escapeHtml(item.desc)}</p>
+                        <p>📍 ${escapeHtml(item.location)}</p>
+                        <p class="contact">📞 ${escapeHtml(item.phone)}</p>
+                        <button class="delete-btn" onclick="deleteItem('${item.id}')">🗑️ 삭제</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function addItem() {
+            const type = document.getElementById('itemType').value;
+            const title = document.getElementById('title').value.trim();
+            const desc = document.getElementById('desc').value.trim();
+            const location = document.getElementById('location').value.trim();
+            let phone = document.getElementById('phone').value;
+            const phoneNumbersOnly = phone.replace(/[^\d]/g, '');
+            
+            if (!title) { alert('물건 이름을 입력해주세요!'); return; }
+            if (!desc) { alert('설명을 입력해주세요!'); return; }
+            if (!location) { alert('위치를 입력해주세요!'); return; }
+            if (!phoneNumbersOnly) { alert('전화번호를 입력해주세요!'); return; }
+            if (phoneNumbersOnly.length < 10 || phoneNumbersOnly.length > 11) {
+                alert('전화번호는 10~11자리 숫자여야 합니다.');
+                return;
+            }
+            
+            let photoUrl = null;
+            let videoUrl = null;
+            
+            // 사진 업로드
+            if (currentPhotoFile) {
+                const fileName = Date.now() + '_photo_' + currentPhotoFile.name;
+                const storageRef = storage.ref('photos/' + fileName);
+                await storageRef.put(currentPhotoFile);
+                photoUrl = await storageRef.getDownloadURL();
+            }
+            
+            // 영상 업로드
+            if (currentVideoFile) {
+                const fileName = Date.now() + '_video_' + currentVideoFile.name;
+                const storageRef = storage.ref('videos/' + fileName);
+                await storageRef.put(currentVideoFile);
+                videoUrl = await storageRef.getDownloadURL();
+            }
+            
+            await db.collection('items').add({
+                type: type,
+                title: title,
+                desc: desc,
+                location: location,
+                phone: phone,
+                photoUrl: photoUrl,
+                videoUrl: videoUrl,
+                timestamp: Date.now(),
+                date: new Date().toLocaleString()
+            });
+            
+            document.getElementById('title').value = '';
+            document.getElementById('desc').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('phone').value = '';
+            document.getElementById('photoPreview').innerHTML = '📸 사진 추가하기';
+            document.getElementById('videoPreview').innerHTML = '🎥 영상 추가하기';
+            currentPhotoFile = null;
+            currentVideoFile = null;
+            document.getElementById('photoInput').value = '';
+            document.getElementById('videoInput').value = '';
+            
+            alert('✅ 등록되었습니다! (모든 사람이 볼 수 있어요)');
+            showTab('lost');
+        }
+        
+        async function deleteItem(id) {
+            if (confirm('정말 삭제하시겠습니까?')) {
+                await db.collection('items').doc(id).delete();
+                alert('삭제되었습니다.');
+            }
+        }
+        
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`${tab}Tab`).classList.add('active');
+            if (tab === 'lost') document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            else if (tab === 'found') document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            else document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+        }
+        
+        document.getElementById('phone')?.addEventListener('input', function(e) {
+            const cursorPos = e.target.selectionStart;
+            const formatted = formatPhoneNumber(e.target.value);
+            if (formatted !== e.target.value) {
+                const diff = formatted.length - e.target.value.length;
+                e.target.value = formatted;
+                e.target.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            }
+        });
+        
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        
+        loadItems();
     </script>
 </body>
 </html>
