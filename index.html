@@ -41,6 +41,7 @@
         .item-card {
             background: white; padding: 15px; border-radius: 20px;
             margin-bottom: 15px; border-left: 5px solid #667eea;
+            position: relative;
         }
         .item-photo {
             width: 100%; height: 200px; border-radius: 15px;
@@ -65,10 +66,46 @@
             color: #667eea; font-weight: bold; margin-top: 10px;
             background: #f8f9ff; padding: 8px; border-radius: 10px;
         }
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
         .delete-btn {
             background: #ff6b6b; color: white; border: none;
             padding: 8px 15px; border-radius: 12px; cursor: pointer;
-            margin-top: 10px;
+        }
+        .admin-delete-btn {
+            background: #dc3545; color: white; border: none;
+            padding: 8px 15px; border-radius: 12px; cursor: pointer;
+            font-weight: bold;
+        }
+        .report-btn {
+            background: #ffc107; color: #333; border: none;
+            padding: 8px 15px; border-radius: 12px; cursor: pointer;
+        }
+        .report-btn.reported {
+            background: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .blocked-badge {
+            background: #dc3545;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .admin-badge {
+            background: #28a745;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            margin-left: 8px;
         }
         .form {
             background: #f8f9fa; padding: 20px; border-radius: 20px;
@@ -111,8 +148,8 @@
         }
         .loading { text-align: center; padding: 20px; color: #888; }
         
-        /* 비밀번호 모달 */
-        .password-modal {
+        /* 모달 스타일 */
+        .password-modal, .admin-modal {
             display: none;
             position: fixed;
             z-index: 2000;
@@ -124,15 +161,15 @@
             align-items: center;
             justify-content: center;
         }
-        .password-modal-content {
+        .password-modal-content, .admin-modal-content {
             background: white;
             padding: 25px;
             border-radius: 20px;
-            max-width: 300px;
+            max-width: 350px;
             width: 90%;
             text-align: center;
         }
-        .password-modal-content input {
+        .password-modal-content input, .admin-modal-content input {
             width: 100%;
             padding: 12px;
             margin: 15px 0;
@@ -140,7 +177,7 @@
             border-radius: 12px;
             font-size: 16px;
         }
-        .password-modal-content button {
+        .password-modal-content button, .admin-modal-content button {
             padding: 10px 20px;
             margin: 5px;
             border: none;
@@ -149,6 +186,61 @@
         }
         .confirm-btn { background: #667eea; color: white; }
         .cancel-btn { background: #ccc; color: #333; }
+        .danger-btn { background: #dc3545; color: white; }
+        
+        /* 관리자 전용 섹션 */
+        .admin-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 15px;
+        }
+        .admin-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        .admin-logout-btn {
+            background: #6c757d;
+            margin-top: 10px;
+        }
+        .reported-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .reported-item {
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .unblock-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .admin-delete-small {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -159,6 +251,7 @@
             <button class="tab-btn active" onclick="showTab('lost')">📱 분실물</button>
             <button class="tab-btn" onclick="showTab('found')">🎁 습득물</button>
             <button class="tab-btn" onclick="showTab('add')">➕ 등록</button>
+            <button class="tab-btn" onclick="showTab('admin')">👑 관리</button>
         </div>
 
         <div id="lostTab" class="tab-content active">
@@ -184,18 +277,15 @@
                 <input type="text" id="location" placeholder="📍 위치">
                 <input type="tel" id="phone" placeholder="📞 연락처 (010-1234-5678)">
                 
-                <!-- 삭제 비밀번호 -->
                 <div class="upload-label">🔒 삭제 비밀번호 (4자리 숫자)</div>
                 <input type="password" id="password" placeholder="삭제할 때 필요한 비밀번호" maxlength="4" inputmode="numeric">
                 
-                <!-- 사진 업로드 -->
                 <div class="upload-label">📸 사진 (선택)</div>
                 <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
                     📸 사진 추가하기
                 </div>
                 <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="previewPhoto(this)">
                 
-                <!-- 영상 업로드 -->
                 <div class="upload-label">🎥 영상 (선택, 50MB 제한)</div>
                 <div class="video-preview" id="videoPreview" onclick="document.getElementById('videoInput').click()">
                     🎥 영상 추가하기
@@ -205,9 +295,25 @@
                 <button onclick="addItem()">✨ 등록하기 ✨</button>
             </div>
         </div>
+
+        <div id="adminTab" class="tab-content">
+            <div class="admin-section">
+                <h3>👑 관리자 메뉴</h3>
+                <div id="adminLoginArea">
+                    <button class="admin-btn" onclick="showAdminLogin()">🔐 관리자 로그인</button>
+                </div>
+                <div id="adminPanel" style="display: none; margin-top: 15px;">
+                    <button class="admin-btn admin-logout-btn" onclick="adminLogout()">🚪 로그아웃</button>
+                    <h4 style="margin-top: 15px;">🚫 신고된 게시물</h4>
+                    <div id="reportedList" class="reported-list"></div>
+                    <h4 style="margin-top: 15px;">⛔ 차단된 전화번호</h4>
+                    <div id="blockedList" class="reported-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 비밀번호 확인 모달 -->
+    <!-- 비밀번호 확인 모달 (삭제용) -->
     <div id="passwordModal" class="password-modal">
         <div class="password-modal-content">
             <h3>🔒 비밀번호 확인</h3>
@@ -220,12 +326,29 @@
         </div>
     </div>
 
+    <!-- 관리자 로그인 모달 -->
+    <div id="adminModal" class="admin-modal">
+        <div class="admin-modal-content">
+            <h3>👑 관리자 로그인</h3>
+            <p>관리자 비밀번호를 입력하세요.</p>
+            <input type="password" id="adminPassword" placeholder="관리자 비밀번호">
+            <div>
+                <button class="confirm-btn" onclick="adminLogin()">로그인</button>
+                <button class="cancel-btn" onclick="closeAdminModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
     <div id="mediaModal" class="modal" onclick="closeModal()">
         <span class="close-modal">&times;</span>
         <div id="modalContent"></div>
     </div>
 
     <script>
+        // ============ 관리자 설정 ============
+        const ADMIN_PASSWORD = "admin1234";
+        let isAdminLoggedIn = false;
+        
         // ============ Firebase 설정 ============
         const firebaseConfig = {
             apiKey: "AIzaSyDcaXysUHS5MiqPLFEmdqjhWD7h8tPCUKQ",
@@ -243,9 +366,203 @@
         
         let currentPhotoFile = null;
         let currentVideoFile = null;
-        let pendingDeleteId = null;  // 삭제 대기 중인 글 ID
+        let pendingDeleteId = null;
         
-        // 전화번호 포맷팅
+        let blockedPhones = [];
+        let reportedItems = [];
+        
+        // ============ 관리자 함수 ============
+        
+        function showAdminLogin() {
+            document.getElementById('adminModal').style.display = 'flex';
+        }
+        
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+        }
+        
+        function adminLogin() {
+            const password = document.getElementById('adminPassword').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                document.getElementById('adminLoginArea').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'block';
+                closeAdminModal();
+                loadAdminData();
+                alert('👑 관리자 모드로 전환되었습니다.\n이제 모든 게시물 옆에 "관리자 삭제" 버튼이 표시됩니다.');
+                loadItems(); // UI 갱신
+            } else {
+                alert('❌ 관리자 비밀번호가 틀렸습니다.');
+                document.getElementById('adminPassword').value = '';
+            }
+        }
+        
+        function adminLogout() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminLoginArea').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            alert('관리자 모드에서 로그아웃되었습니다.');
+            loadItems(); // UI 갱신
+        }
+        
+        // 관리자용 강제 삭제 (비밀번호 불필요)
+        async function adminForceDelete(itemId, itemTitle) {
+            if (!isAdminLoggedIn) {
+                alert('관리자 권한이 필요합니다.');
+                return;
+            }
+            
+            if (confirm(`⚠️ 관리자 권한으로 "${itemTitle}" 게시물을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+                await db.collection('items').doc(itemId).delete();
+                alert('✅ 게시물이 삭제되었습니다.');
+                loadItems();
+                if (isAdminLoggedIn) loadAdminData();
+            }
+        }
+        
+        // 차단 목록 불러오기
+        async function loadBlockedList() {
+            const snapshot = await db.collection('blocked').doc('phones').get();
+            if (snapshot.exists) {
+                blockedPhones = snapshot.data().list || [];
+            } else {
+                blockedPhones = [];
+            }
+        }
+        
+        // 신고된 글 목록 불러오기
+        async function loadReportedItems() {
+            const snapshot = await db.collection('reports').doc('items').get();
+            if (snapshot.exists) {
+                reportedItems = snapshot.data().list || [];
+            } else {
+                reportedItems = [];
+            }
+        }
+        
+        function isPhoneBlocked(phone) {
+            if (!phone) return false;
+            const phoneNumbers = phone.replace(/[^\d]/g, '');
+            return blockedPhones.includes(phoneNumbers);
+        }
+        
+        // 신고하기
+        async function reportItem(itemId, itemPhone) {
+            if (reportedItems.includes(itemId)) {
+                alert('⚠️ 이미 신고된 게시물입니다.');
+                return;
+            }
+            
+            const reason = prompt('신고 사유를 입력해주세요:\n(예: 욕설, 광고, 반복 게시 등)', '부적절한 내용');
+            if (!reason) return;
+            
+            reportedItems.push(itemId);
+            await db.collection('reports').doc('items').set({ list: reportedItems });
+            
+            const reportCountRef = db.collection('reportCounts').doc(itemId);
+            const reportCountDoc = await reportCountRef.get();
+            let count = 1;
+            if (reportCountDoc.exists) {
+                count = (reportCountDoc.data().count || 0) + 1;
+            }
+            await reportCountRef.set({ count: count, lastReported: Date.now() });
+            
+            if (count >= 3) {
+                const phoneNumbers = itemPhone.replace(/[^\d]/g, '');
+                if (phoneNumbers && !blockedPhones.includes(phoneNumbers)) {
+                    blockedPhones.push(phoneNumbers);
+                    await db.collection('blocked').doc('phones').set({ list: blockedPhones });
+                    alert(`⚠️ 해당 전화번호(${phoneNumbers})가 3회 신고되어 자동 차단되었습니다.`);
+                }
+                await db.collection('items').doc(itemId).delete();
+                alert('신고 누적으로 게시물이 삭제되었습니다.');
+            } else {
+                alert(`✅ 신고가 접수되었습니다. (현재 ${count}/3회)\n3회 누적 시 자동 차단됩니다.`);
+            }
+            
+            if (isAdminLoggedIn) loadAdminData();
+            loadItems();
+        }
+        
+        // 차단 해제
+        async function unblockPhone(phoneNumber) {
+            if (!isAdminLoggedIn) {
+                alert('관리자 권한이 필요합니다.');
+                return;
+            }
+            
+            blockedPhones = blockedPhones.filter(p => p !== phoneNumber);
+            await db.collection('blocked').doc('phones').set({ list: blockedPhones });
+            alert(`✅ ${phoneNumber} 차단이 해제되었습니다.`);
+            loadAdminData();
+            loadItems();
+        }
+        
+        // 신고 무시
+        async function ignoreReport(itemId) {
+            if (!isAdminLoggedIn) {
+                alert('관리자 권한이 필요합니다.');
+                return;
+            }
+            
+            reportedItems = reportedItems.filter(id => id !== itemId);
+            await db.collection('reports').doc('items').set({ list: reportedItems });
+            alert('✅ 신고가 무시 처리되었습니다.');
+            loadAdminData();
+        }
+        
+        // 관리자 데이터 로드
+        async function loadAdminData() {
+            if (!isAdminLoggedIn) return;
+            
+            await loadReportedItems();
+            await loadBlockedList();
+            
+            const reportedDiv = document.getElementById('reportedList');
+            if (reportedItems.length === 0) {
+                reportedDiv.innerHTML = '<div style="padding: 10px; color:#999;">📭 신고된 게시물이 없습니다</div>';
+            } else {
+                let html = '';
+                for (const itemId of reportedItems) {
+                    const doc = await db.collection('items').doc(itemId).get();
+                    if (doc.exists) {
+                        const item = doc.data();
+                        html += `
+                            <div class="reported-item">
+                                <div>
+                                    <strong>${escapeHtml(item.title)}</strong><br>
+                                    <small>📞 ${escapeHtml(item.phone)}</small>
+                                </div>
+                                <div style="display: flex; gap: 5px;">
+                                    <button class="unblock-btn" onclick="ignoreReport('${itemId}')">✅ 무시</button>
+                                    <button class="admin-delete-small" onclick="adminForceDelete('${itemId}', '${escapeHtml(item.title)}')">🗑️ 삭제</button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        reportedItems = reportedItems.filter(id => id !== itemId);
+                        await db.collection('reports').doc('items').set({ list: reportedItems });
+                    }
+                }
+                reportedDiv.innerHTML = html || '<div style="padding: 10px; color:#999;">📭 신고된 게시물이 없습니다</div>';
+            }
+            
+            const blockedDiv = document.getElementById('blockedList');
+            if (blockedPhones.length === 0) {
+                blockedDiv.innerHTML = '<div style="padding: 10px; color:#999;">📭 차단된 번호가 없습니다</div>';
+            } else {
+                blockedDiv.innerHTML = blockedPhones.map(phone => `
+                    <div class="reported-item">
+                        <span>📞 ${phone}</span>
+                        <button class="unblock-btn" onclick="unblockPhone('${phone}')">🔓 차단 해제</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // ============ 기존 함수들 ============
+        
         function formatPhoneNumber(value) {
             let numbers = value.replace(/[^\d]/g, '');
             if (numbers.length > 11) numbers = numbers.slice(0, 11);
@@ -254,7 +571,6 @@
             return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
         }
         
-        // 사진 미리보기
         function previewPhoto(input) {
             if (input.files && input.files[0]) {
                 currentPhotoFile = input.files[0];
@@ -266,7 +582,6 @@
             }
         }
         
-        // 영상 미리보기
         function previewVideo(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -284,14 +599,16 @@
             }
         }
         
-        // 데이터 불러오기
-        function loadItems() {
+        async function loadItems() {
+            await loadBlockedList();
+            
             db.collection('items').orderBy('timestamp', 'desc').onSnapshot(snapshot => {
                 const items = [];
                 snapshot.forEach(doc => {
                     items.push({ id: doc.id, ...doc.data() });
                 });
-                displayItems(items);
+                const filteredItems = items.filter(item => !isPhoneBlocked(item.phone));
+                displayItems(filteredItems);
             });
         }
         
@@ -321,28 +638,23 @@
             });
         }
         
-        // 삭제 요청 (비밀번호 모달 열기)
         function requestDelete(id) {
             pendingDeleteId = id;
             document.getElementById('passwordModal').style.display = 'flex';
             document.getElementById('deletePassword').value = '';
         }
         
-        // 비밀번호 확인 후 삭제
         async function confirmDelete() {
             const enteredPassword = document.getElementById('deletePassword').value;
-            
             if (!enteredPassword) {
                 alert('비밀번호를 입력하세요!');
                 return;
             }
             
-            // Firebase에서 글 정보 가져와서 비밀번호 확인
             const doc = await db.collection('items').doc(pendingDeleteId).get();
             const item = doc.data();
             
             if (item && item.password === enteredPassword) {
-                // 비밀번호 일치 - 삭제 진행
                 await db.collection('items').doc(pendingDeleteId).delete();
                 alert('삭제되었습니다.');
                 closePasswordModal();
@@ -361,38 +673,40 @@
             const lostItems = items.filter(i => i.type === 'lost');
             const foundItems = items.filter(i => i.type === 'found');
             
+            const makeItemHTML = (item, emoji) => {
+                const isReported = reportedItems.includes(item.id);
+                return `
+                    <div class="item-card">
+                        ${item.photoUrl ? `<div class="item-photo" onclick="showMediaModal('${item.photoUrl}', 'image')"><img src="${item.photoUrl}"></div>` : ''}
+                        ${item.videoUrl ? `<div class="item-video" onclick="showMediaModal('${item.videoUrl}', 'video')"><video src="${item.videoUrl}" muted></video></div>` : ''}
+                        <h3>${emoji} ${escapeHtml(item.title)} ${isAdminLoggedIn ? '<span class="admin-badge">👑 관리자</span>' : ''}</h3>
+                        <p>📝 ${escapeHtml(item.desc)}</p>
+                        <p>📍 ${escapeHtml(item.location)}</p>
+                        <p class="contact">📞 ${escapeHtml(item.phone)}</p>
+                        <div class="button-group">
+                            <button class="delete-btn" onclick="requestDelete('${item.id}')">🗑️ 삭제 (비밀번호)</button>
+                            ${isAdminLoggedIn ? `<button class="admin-delete-btn" onclick="adminForceDelete('${item.id}', '${escapeHtml(item.title)}')">👑 관리자 삭제</button>` : ''}
+                            <button class="report-btn ${isReported ? 'reported' : ''}" 
+                                ${isReported ? 'disabled' : `onclick="reportItem('${item.id}', '${item.phone.replace(/'/g, "\\'")}')"`}>
+                                ${isReported ? '✓ 신고됨' : '🚨 신고'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+            };
+            
             const lostList = document.getElementById('lostList');
             if (lostItems.length === 0) {
                 lostList.innerHTML = '<div class="empty-message">📭 등록된 분실물이 없습니다</div>';
             } else {
-                lostList.innerHTML = lostItems.map(item => `
-                    <div class="item-card">
-                        ${item.photoUrl ? `<div class="item-photo" onclick="showMediaModal('${item.photoUrl}', 'image')"><img src="${item.photoUrl}"></div>` : ''}
-                        ${item.videoUrl ? `<div class="item-video" onclick="showMediaModal('${item.videoUrl}', 'video')"><video src="${item.videoUrl}" muted></video></div>` : ''}
-                        <h3>❌ ${escapeHtml(item.title)}</h3>
-                        <p>📝 ${escapeHtml(item.desc)}</p>
-                        <p>📍 ${escapeHtml(item.location)}</p>
-                        <p class="contact">📞 ${escapeHtml(item.phone)}</p>
-                        <button class="delete-btn" onclick="requestDelete('${item.id}')">🗑️ 삭제</button>
-                    </div>
-                `).join('');
+                lostList.innerHTML = lostItems.map(item => makeItemHTML(item, '❌')).join('');
             }
             
             const foundList = document.getElementById('foundList');
             if (foundItems.length === 0) {
                 foundList.innerHTML = '<div class="empty-message">📭 등록된 습득물이 없습니다</div>';
             } else {
-                foundList.innerHTML = foundItems.map(item => `
-                    <div class="item-card">
-                        ${item.photoUrl ? `<div class="item-photo" onclick="showMediaModal('${item.photoUrl}', 'image')"><img src="${item.photoUrl}"></div>` : ''}
-                        ${item.videoUrl ? `<div class="item-video" onclick="showMediaModal('${item.videoUrl}', 'video')"><video src="${item.videoUrl}" muted></video></div>` : ''}
-                        <h3>✅ ${escapeHtml(item.title)}</h3>
-                        <p>📝 ${escapeHtml(item.desc)}</p>
-                        <p>📍 ${escapeHtml(item.location)}</p>
-                        <p class="contact">📞 ${escapeHtml(item.phone)}</p>
-                        <button class="delete-btn" onclick="requestDelete('${item.id}')">🗑️ 삭제</button>
-                    </div>
-                `).join('');
+                foundList.innerHTML = foundItems.map(item => makeItemHTML(item, '✅')).join('');
             }
         }
         
@@ -418,10 +732,14 @@
                 return;
             }
             
+            if (isPhoneBlocked(phone)) {
+                alert('⛔ 이 전화번호는 신고 누적으로 차단되어 게시물을 등록할 수 없습니다.');
+                return;
+            }
+            
             let photoUrl = null;
             let videoUrl = null;
             
-            // 사진 업로드
             if (currentPhotoFile) {
                 const fileName = Date.now() + '_photo_' + currentPhotoFile.name;
                 const storageRef = storage.ref('photos/' + fileName);
@@ -429,7 +747,6 @@
                 photoUrl = await storageRef.getDownloadURL();
             }
             
-            // 영상 업로드
             if (currentVideoFile) {
                 const fileName = Date.now() + '_video_' + currentVideoFile.name;
                 const storageRef = storage.ref('videos/' + fileName);
@@ -438,16 +755,9 @@
             }
             
             await db.collection('items').add({
-                type: type,
-                title: title,
-                desc: desc,
-                location: location,
-                phone: phone,
-                password: password,  // 비밀번호 저장
-                photoUrl: photoUrl,
-                videoUrl: videoUrl,
-                timestamp: Date.now(),
-                date: new Date().toLocaleString()
+                type: type, title: title, desc: desc, location: location,
+                phone: phone, password: password, photoUrl: photoUrl,
+                videoUrl: videoUrl, timestamp: Date.now(), date: new Date().toLocaleString()
             });
             
             document.getElementById('title').value = '';
@@ -459,10 +769,8 @@
             document.getElementById('videoPreview').innerHTML = '🎥 영상 추가하기';
             currentPhotoFile = null;
             currentVideoFile = null;
-            document.getElementById('photoInput').value = '';
-            document.getElementById('videoInput').value = '';
             
-            alert('✅ 등록되었습니다! (삭제 시 비밀번호가 필요합니다)');
+            alert('✅ 등록되었습니다!');
             showTab('lost');
         }
         
@@ -470,9 +778,11 @@
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById(`${tab}Tab`).classList.add('active');
-            if (tab === 'lost') document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-            else if (tab === 'found') document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-            else document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+            const btns = document.querySelectorAll('.tab-btn');
+            if (tab === 'lost') btns[0].classList.add('active');
+            else if (tab === 'found') btns[1].classList.add('active');
+            else if (tab === 'add') btns[2].classList.add('active');
+            else btns[3].classList.add('active');
         }
         
         document.getElementById('phone')?.addEventListener('input', function(e) {
@@ -485,7 +795,6 @@
             }
         });
         
-        // 비밀번호 입력 필드 숫자만
         document.getElementById('password')?.addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
         });
@@ -495,6 +804,8 @@
         
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
         
+        loadBlockedList();
+        loadReportedItems();
         loadItems();
     </script>
 </body>
